@@ -10,3 +10,5 @@ pyarrow = "*"
 [dev-packages]
 pytest = "*"
 pytest-flake8 = "*"
+pytest-helpers-namespace = "*"
+pytest-lazy-fixture = "*"

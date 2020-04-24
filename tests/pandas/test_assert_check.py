@@ -1,11 +1,10 @@
-import numpy as np
 import pandas as pd
 import pytest
-from .conftest import assert_error
-from tools.pandas.assert_check import assert_type, replace_check, assert_column_values
+from tools.pandas.assert_check import replace_check, assert_column_values
+# from tools.pandas.assert_check import assert_type
 
 
-@pytest.mark.parametrize("df_dic, values, assert_error, case", [
+@pytest.mark.parametrize("df_dic, values, should_fail, case", [
     (
         {"str_range_10": list(map(str, range(10)))},
         [str(i) for i in range(10)],
@@ -17,7 +16,7 @@ from tools.pandas.assert_check import assert_type, replace_check, assert_column_
         False,
         "dict of good values"
     ), (
-        {"str_range_10_with_nan": list(map(str, range(7))) + [np.nan, "8", np.nan]},
+        {"str_range_10_with_nan": list(map(str, range(7))) + [None, "8", None]},
         [str(i) for i in range(10)],
         False,
         "df with nan values"
@@ -28,10 +27,15 @@ from tools.pandas.assert_check import assert_type, replace_check, assert_column_
         "8 and 9 are not in the allowed values."
     )
 ])
-@assert_error
-def test_assert_column_values_should_succeed(df_dic, values, case):
+@pytest.helpers.assert_error
+def test_assert_column_values(df_dic, values, case, should_fail):
+    # Given
     df = pd.DataFrame(df_dic)
+
+    # When
     assert_column_values(df, df.columns[0], values), case
+
+    # Then depending on should_fail, it should fail
 
 
 @pytest.fixture(scope="module")
@@ -40,7 +44,7 @@ def df():
         "str_range_10": list(map(str, range(10))),
         "raise_error_str_range_10": list(map(str, range(10)))})
 
-    df["str_range_10_with_nan"] = np.nan
+    df["str_range_10_with_nan"] = None
     df.loc[range(0, 10, 2), "str_range_10_with_nan"] = df.loc[range(0, 10, 2), "a"]
 
     df["int_range_10"] = df.a.astype(int)
@@ -72,11 +76,11 @@ def values(df_to_replace):
     return replace_dic
 
 
-@pytest.mark.parametrize("df_dic, values_dic, kw, assert_error, case", [
+@pytest.mark.parametrize("df_dic, values_dic, kw, should_fail, case", [
     (
             {
                 "str_range_10": list(map(str, range(10))),
-                "str_range_10_with_nan": list(map(str, range(7))) + [np.nan, "8", np.nan]},
+                "str_range_10_with_nan": list(map(str, range(7))) + [None, "8", None]},
             {
                 "str_range_10": {str(i): chr(97 + i) for i in range(10)},
                 "str_range_10_with_nan": {str(i): chr(97 + i) for i in range(15)}},
@@ -90,7 +94,7 @@ def values(df_to_replace):
             {
                 "str_range_10_with_spaces": list(map(lambda x: str(x) + "  ", range(10))),
                 "str_range_10_with_nan_with_spaces": list(map(str, range(7))) + [
-                    np.nan, " 8 ", np.nan]},
+                    None, " 8 ", None]},
             {
                 "str_range_10_with_spaces": {str(i): chr(97 + i) for i in range(10)},
                 "str_range_10_with_nan_with_spaces": {str(i): chr(97 + i) for i in range(10)}},
@@ -99,7 +103,7 @@ def values(df_to_replace):
             {
                 "str_range_10_with_spaces": list(map(lambda x: str(x) + "  ", range(10))),
                 "str_range_10_with_nan_with_spaces": list(map(str, range(7))) + [
-                    np.nan, " 8 ", np.nan]},
+                    None, " 8 ", None]},
             {
                 "str_range_10_with_spaces": {str(i): chr(97 + i) for i in range(10)},
                 "str_range_10_with_nan_with_spaces": {str(i): chr(97 + i) for i in range(10)}},
@@ -118,13 +122,13 @@ def values(df_to_replace):
             {"lower": False}, True, "given uppercase values, it should fail without lower options"
     )
 ])
-@assert_error
-def test_replace_check(df_dic, values_dic, kw, case):
+@pytest.helpers.assert_error
+def test_replace_check(df_dic, values_dic, kw, case, should_fail):
     df = pd.DataFrame(df_dic)
     replace_check(df, values_dic, **kw)
 #
 #
-# @pytest.mark.parametrize("col, dtype, na_allowed, assert_error", [
+# @pytest.mark.parametrize("col, dtype, na_allowed, should_fail", [
 #     ("a", "str", False, False),
 #     ("a", "int", False, True),
 #     ("a_with_nan", "str", True, False),
@@ -145,8 +149,8 @@ def test_replace_check(df_dic, values_dic, kw, case):
 #     df["mult_str_key"] = df["mult_int_key"].map(str)
 #     df["str_key"] = df["int_key"].map(str)
 #     df["str1"] = [chr(97 + i) for i in range(20)]
-#     df["int_key_with_nan"] = df["int_key"].map(lambda x: x if x % 2 else np.nan)
+#     df["int_key_with_nan"] = df["int_key"].map(lambda x: x if x % 2 else None)
 #     df["mult_col_int_key1"] = df["mult_col_int_key2"] = df["int_key"]
 #     df = df.rename(
-#         columns={"mult_col_int_key1": "mult_col_int_key", "mult_col_int_key2": "mult_col_int_key"})
+#        columns={"mult_col_int_key1": "mult_col_int_key", "mult_col_int_key2": "mult_col_int_key"})
 #     return df

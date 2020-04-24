@@ -84,7 +84,7 @@ class Stringer(object):
         msg = "(dict(%i): %s)" % (len(dic), dic_str)
         return msg
 
-    def DataFrame(self, df):
+    def dataframe(self, df):
         """Generate the string representing the DataFrame.
 
         'Dataframe' and its shape are represented.
@@ -145,7 +145,7 @@ class Stringer(object):
         elif type(arg) == np.ndarray:
             return self.numpy(arg)
         elif type(arg) == pd.DataFrame:
-            return self.DataFrame(arg)
+            return self.dataframe(arg)
         else:
             return str(type(arg).__name__)
 
@@ -169,8 +169,8 @@ class Logger(object):
 
     """
 
-    def __init__(self, logger_name=None, level=None, format=None, datefmt=None, filename=None,
-                 filemode="a", use_console=True):
+    def __init__(self, logger_name="tools.logger", level=None, format=None, datefmt=None,
+                 filename=None, filemode="a", use_console=True):
         # logging is by default using a console handler unless a filename is specified
         if use_console:
             logging.basicConfig(level=level, format=format, datefmt=datefmt)
@@ -196,7 +196,7 @@ class Logger(object):
 
     @staticmethod
     def assign_arguments(func, *args, **kw):
-        """Assign arguments with the argument name of the function.
+        """Assign arguments values with the argument name of the function.
 
         Parameters
         ----------

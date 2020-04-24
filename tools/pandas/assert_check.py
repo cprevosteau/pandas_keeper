@@ -23,7 +23,7 @@ def replace_check(df, values, strip=True, lower=False):
 
     Args:
         df (DataFrame): DataFrame having columns values to be replaced.
-        values (dict of dict): Dictionary which for each key column name has a replacement
+        values (dict of str, dict): Dictionary which for each key column name has a replacement
             dictionary of the form old_value -> new value. Once the replacement has taken place,
             the values of the resulting column is expecting to take values only in the new values of
             the replacement dictionary.

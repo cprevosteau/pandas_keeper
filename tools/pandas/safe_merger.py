@@ -5,10 +5,59 @@ from tools.pandas.assert_check import assert_column_values, assert_type, replace
 SIDES = ["left", "right"]
 
 
+def safe_merge(left_df, right_df, how="left", on_key_dtypes="str", on=None, left_on=None,
+               right_on=None, na_allowed=None, left_na_allowed=None, right_na_allowed=None,
+               drop_side_keys="right", suffixes=(False, False), validate="many_to_one",
+               **merge_kwargs):
+    left_keys_dtypes, right_key_dtypes, left_keys, right_keys = _get_left_right_keys(
+        on_key_dtypes, on, left_on, right_on)
+
+    left_na_allowed, right_na_allowed = _get_check_na_allowed_args(
+        na_allowed, left_na_allowed, right_na_allowed)
+
+    left_na_allowed = _make_check_na_allowed(left_na_allowed, left_keys)
+    right_na_allowed = _make_check_na_allowed(right_na_allowed, right_keys)
+
+    _check_key_columns(left_df, left_keys, left_keys_dtypes, left_na_allowed)
+    _check_key_columns(right_df, right_keys, right_key_dtypes, right_na_allowed)
+
+    left_concat_keys = _concat_keys(left_df, left_keys)
+    right_concat_keys = _concat_keys(right_df, right_keys)
+
+    LOGGER.info("Left key values in right table: %s / %s, %.2f%%" % _get_matching_keys_info(
+        left_concat_keys, right_concat_keys))
+    LOGGER.info("Right key values in left table: %s / %s, %.2f%%" % _get_matching_keys_info(
+        right_concat_keys, left_concat_keys))
+
+    merged_df = left_df.merge(right_df, how=how, left_on=left_keys, right_on=right_keys,
+                              suffixes=suffixes, validate=validate, **merge_kwargs)
+    if drop_side_keys == "right":
+        merged_df = _drop_other_key_columns(merged_df, left_keys, right_keys)
+    elif drop_side_keys == "left":
+        merged_df = _drop_other_key_columns(merged_df, right_keys, left_keys)
+    return merged_df
+
+
+
+
+
 def _to_list(val):
     if type(val) == list:
         return val
     return [val]
+
+
+def _concat_keys(df, keys):
+    return pd.Series(list(zip(*[df[col] for col in keys])))
+
+def _get_check_na_allowed_args(na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg):
+    if na_allowed_arg is None:
+        assert left_na_allowed_arg is not None and right_na_allowed_arg is not None, \
+            "If na_allowed is None, left_na_allowed and right_na_allowed should be specified."
+        return left_na_allowed_arg, right_na_allowed_arg
+    assert left_na_allowed_arg is None and right_na_allowed_arg is None, \
+        "If na_allowed is specified, left_na_allowed and right_na_allowed should not be specified."
+    return na_allowed_arg, na_allowed_arg
 
 
 def _make_check_na_allowed(na_allowed_arg, keys):
@@ -84,13 +133,17 @@ def _get_left_right_keys(on_key_dtypes, on, left_on, right_on):
             if keys_is_right_keys:
                 left_key_dtypes = {left_on[idx]: on_key_dtypes[right_key]
                                    for idx, right_key in enumerate(right_on)}
+                right_key_dtypes = on_key_dtypes
             else:
+                right_key_dtypes = {right_on[idx]: on_key_dtypes[left_key]
+                                    for idx, left_key in enumerate(left_on)}
                 left_key_dtypes = on_key_dtypes
         else:
             assert right_on is None, "left_on and right on should be specified together."
             left_on = keys
             right_on = keys
             left_key_dtypes = on_key_dtypes
+            right_key_dtypes = on_key_dtypes
     else:
         if on is not None:
             assert left_on is None, "left_on should be None if on is not."
@@ -105,7 +158,8 @@ def _get_left_right_keys(on_key_dtypes, on, left_on, right_on):
             right_on = _to_list(right_on)
             assert len(left_on) == len(right_on), "left_on and right_on should have the same size."
         left_key_dtypes = {key: on_key_dtypes for key in left_on}
-    return left_key_dtypes, left_on, right_on
+        right_key_dtypes = {key: on_key_dtypes for key in right_on}
+    return left_key_dtypes, right_key_dtypes, left_on, right_on
 
 
 def _check_side_non_key_columns(df, other_df, keys, df_side):
@@ -129,161 +183,7 @@ def _get_matching_keys_info(concat_keys, other_concat_keys):
     return isin.sum(), isin.shape[0], isin.mean() * 100
 
 
-def _drop_right_key_columns(df, left_keys, right_keys):
-    key_cols_to_drop = list(set(right_keys) - set(left_keys))
+def _drop_other_key_columns(df, keys, other_keys):
+    key_cols_to_drop = list(set(other_keys) - set(keys))
     return df.drop(columns=key_cols_to_drop)
 
-
-def safe_merge(left_df, right_df, how, on_keys_dtypes="str", on=None, left_on=None, right_on=None,
-               na_allowed=None,
-               left_na_allowed=None, right_na_allowed=None, unique_right=True, keep_left_keys=True,
-               keep_right_keys=False)
-
-# def _check_unicity_and_matching_key_values(left_df, right_df, left_keys, right_keys, unique_right):
-#     """Check unicity and matching of key values.
-#
-#     If unique_right is True, assert that each concatenation of the key column values are unique in the right DataFrame.
-#     Log the proportion of matching key values in the right and the left DataFrames.
-#
-#     """
-#     right_concat_keys = pd.Series(list(zip(*[other[col] for col in right_keys])))
-#     left_concat_keys = pd.Series(list(zip(*[self.df[col] for col in left_keys])))
-#     if unique_right:
-#         val_key = right_concat_keys.value_counts(dropna=False)
-#         wrong_keys = list(val_key[val_key > 1].index)
-#         assert len(
-#             wrong_keys) == 0, "Each of these key values are present on multiple rows: %s" % wrong_keys
-#     left_isin = left_concat_keys.isin(set(right_concat_keys))
-#     right_isin = right_concat_keys.isin(set(left_concat_keys))
-#     LOGGER.info("Left key values in right table: %s / %s, %.2f%%" % (
-#         left_isin.sum(), left_isin.shape[0], left_isin.mean() * 100))
-#     LOGGER.logger.info("Right key values in left table: %s / %s, %.2f%%" % (
-#         right_isin.sum(), right_isin.shape[0], right_isin.mean() * 100))
-#
-
-#
-# def merge(self, other, how="inner", on=None, left_on=None, right_on=None, na_allowed=False,
-#           unique_right=True, keep_right_keys=False):
-#     """Merge other with df.
-#
-#     Args:
-#         other (DataFrame): right DataFrame to merge.
-#         how (str, default: "inner"): how argument of pandas.merge
-#         on, left_on, right_on (str or list): on, right_on, left_on arguments of pandas.merge
-#                                             If none of `on`, `left_on` and `right_on` are specified, `on` will be set with keys of `keys_dtypes`.
-#                                             If only one key column is set and the argument `right_on` is used, `left_on` do not have to be specified.
-#                                             It will be set to this key column.
-#                                             If right_on is specified, right key columns not in left_on are dropped
-#                                             in the resulting DataFrame.
-#         na_allowed (bool or dict, default: False): Are N/A values allowed in the right key columns ?
-#                                    If it is a dict, must be of the form: key_column -> na_allowed.
-#         unique_right (bool, default: True): Must the concatenation of right key column values unique in the right DataFrame ?
-#         keep_right_keys (bool, default: False): Should the resulting DataFrame contain right key columns with different
-#                                   column names than the left key columns ?
-#
-#     """
-#     left_keys, right_keys = self._check_get_right_left_keys(other, on, left_on, right_on)
-#     right_dtypes = {right_keys[i]: self.dtypes[l_key] for i, l_key in enumerate(left_keys)}
-#     right_na_allowed = self._make_check_na_allowed(na_allowed, right_keys)
-#     self._check_key_columns(other, right_keys, right_dtypes, right_na_allowed)
-#     self._check_non_key_columns(other, left_keys, right_keys)
-#     self._check_unicity_and_matching_key_values(other, left_keys, right_keys, unique_right)
-#     self.df = self.df.merge(other, left_on=left_keys, right_on=right_keys, how=how)
-#     if not keep_right_keys:
-#         self._drop_right_key_columns(left_keys, right_keys)
-#     return self
-
-
-class SafeDF(object):
-
-    def __init__(self, df, keys_dtypes, na_allowed=False):
-        self.df = df
-        self.dtypes = keys_dtypes
-        self._keys = list(self.dtypes.keys())
-        self.na_allowed = _make_check_na_allowed(na_allowed, self._keys)
-        _check_key_columns(self.df, self._keys, self.dtypes, self.na_allowed)
-
-
-# class SafeMerger(object):
-#     """Test two DataFrames before merging them.
-#
-#     Checks done:
-#         - key columns are to be present in right and left DataFrames
-#         - key columns must have a unique name or only be present once in each DataFrame
-#         - Each key column must have the expected dtype and the presence of N/A values
-#           might be checked depending on na_allowed.
-#         - Left and right DataFrames must not have columns in common except key columns from both.
-#         - If unique_right, each concatenation of the key column values are unique in the right
-#           DataFrame.
-#
-#     Args:
-#         df (DataFrame): initial left DataFrame to merge.
-#         keys_dtypes (dict): Dictionary of the form column_name -> dtype, where column_name
-#             is to be used as a key for merging.
-#         na_allowed (bool or dict, default: False): Are N/A values allowed ? If it is a dictionary,
-#             must be of the form key_column -> bool.
-#
-#     """
-#
-#     def __init__(self, df, keys_dtypes, na_allowed=False):
-#         self.na_allowed = self._make_check_na_allowed(na_allowed, self._keys)
-#         self.dtypes = keys_dtypes
-#         self._keys = list(self.dtypes.keys())
-#         self.df = df
-#         self._check_key_columns(self.df, self._keys, self.dtypes, self.na_allowed)
-
-
-
-
-
-
-# def safe_merge(df, other, keys_dtypes, how="inner", on=None, left_on=None, right_on=None,
-#                na_allowed=None,
-#                left_na_allowed=None, right_na_allowed=None, unique_right=True, keep_left_keys=True,
-#                keep_right_keys=False):
-#     """Merge safely two DataFrames.
-#
-#     Checks done:
-#         - key columns are to be present in right and left DataFrames
-#         - key columns must have a unique name or only be present once in each DataFrame
-#         - Each key column must have the expected dtype and the presence of N/A values
-#           might be checked depending on na_allowed.
-#         - Left and right DataFrames must not have columns in common except key columns from both.
-#         - If unique_right, each concatenation of the key column values are unique in the right DataFrame.
-#
-#     Args:
-#         df (DataFrame): left DataFrame to merge.
-#         other (DataFrame): right DataFrame to merge.
-#         keys_dtypes (dict): Dictionary of the form column_name -> dtype, where column_name
-#             is to be used as a key for the merging.
-#         how (str, default: "inner"): how argument of pandas.merge
-#         on, left_on, right_on (str or list): on, right_on, left_on arguments of pandas.merge
-#             If none of `on`, `left_on` and `right_on` are specified, `on` will be set with keys of `keys_dtypes`.
-#             If only one key column is set and the argument `right_on` is used, `left_on` do not have to be specified.
-#             It will be set to this key column.
-#             If right_on is specified, right key columns not in left_on are dropped
-#             in the resulting DataFrame.
-#         na_allowed (bool or dict, default: None): Are N/A values allowed in the key columns ?
-#             If it is a dict, must be of the form: key_column -> na_allowed.
-#         left_na_allowed (bool or dict, default: None): Are N/A values allowed in the left key columns ?
-#             False if it is None.
-#             If it is a dict, must be of the form: key_column -> na_allowed.
-#         right_na_allowed (bool or dict, default: None): Are N/A values allowed in the right key columns ?
-#             False if it is None.
-#             If it is a dict, must be of the form: key_column -> na_allowed.
-#         unique_right (bool, default: True): Must the concatenation of right key column values unique in the right DataFrame ?
-#
-#     """
-#     if na_allowed is not None:
-#         assert left_na_allowed is None and right_na_allowed is None, "left_na_allowed or right_na_allowed must not be specified if na_allowed is."
-#         left_na_allowed = na_allowed
-#         right_na_allowed = na_allowed
-#     else:
-#         if left_na_allowed is None:
-#             left_na_allowed = False
-#         if right_na_allowed is None:
-#             right_na_allowed = False
-#     return (SafeMerger(df, keys_dtypes, left_na_allowed)
-#             .merge(other, how, on, left_on, right_on, right_na_allowed, unique_right,
-#                    keep_right_keys)
-#             .df)

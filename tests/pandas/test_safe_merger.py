@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 from tools.pandas.safe_merger import SafeDF, _make_check_na_allowed, _check_keys_in_df, \
     _check_keys_are_in_df_only_once, _get_left_right_keys, _check_side_non_key_columns, \
-    _check_right_key_values_unicity, _get_matching_keys_info, _drop_right_key_columns
+    _check_right_key_values_unicity, _get_matching_keys_info, _drop_other_key_columns, \
+    _get_check_na_allowed_args
 
 
 def df_to_merge():
@@ -42,6 +43,34 @@ def test_make_check_na_allowed(na_allowed_arg, keys, expected_na_allowed, should
     # Then
     if not should_fail:
         assert actual_na_allowed == expected_na_allowed
+
+
+@pytest.mark.parametrize("na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg, "
+                         "expected_left_na_allowed, expected_right_na_allowed, should_fail, case", [
+    (True, None, None, True, True, False, "Only na_allowed is spedcified with a boolean."),
+    (None, True, False, True, False, False, "Left na_allowed and right_na_allowed are specified"),
+    ({"test": True}, {"error": True}, None, None, None, True,
+     "na_allowed and left_na_allowed should not be specified together."),
+    ({"test": True}, None, {"error": True}, None, None, True,
+     "na_allowed and right_na_allowed should not be specified together."),
+    (None, None, {"error": True}, None, None, True,
+     "right_na_allowed should not be specified alone."),
+    (None, {"error": True}, None, None, None, True,
+     "left_na_allowed should not be specified alone.")
+])
+@pytest.helpers.assert_error
+def test_get_check_na_allowed_args(na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg,
+                                   expected_left_na_allowed, expected_right_na_allowed, should_fail,
+                                   case):
+    # When
+    actual_left_na_allowed, actual_right_na_allowed = _get_check_na_allowed_args(
+        na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg)
+
+    # Then
+    if not should_fail:
+        assert actual_left_na_allowed == expected_left_na_allowed
+        assert actual_right_na_allowed == expected_right_na_allowed
+
 
 
 @pytest.mark.parametrize("df, keys, should_fail, case", [
@@ -88,45 +117,49 @@ def test_init(keys_dtypes, na_allowed, should_fail):
 
 
 @pytest.mark.parametrize("on_key_dtypes, on, left_on, right_on, expected_left_key_dtypes, "
-                         "expected_left_keys, expected_right_keys, should_fail, case", [
-    ({"a": "str", "b": "int"}, None, None, None,{"a": "str", "b": "int"}, ["a", "b"], ["a", "b"],
-     False, "on_key_dtypes is specified with a dict"),
-    ("int", ["a", "b"], None, None, {"a": "int", "b": "int"}, ["a", "b"], ["a", "b"], False,
-     "on is specified with a list of column and on_key_dtypes with a dtype"),
-    ("str", "a", None, None, {"a": "str"}, ["a"], ["a"], False, "on is specified with a column"),
-    ("str", None, ["a", "b"], ["a", "d"], {"a": "str", "b": "str"}, ["a", "b"], ["a", "d"], False,
-     "left_on and right_on are specified with list of columns"),
-    ("str", None, "b", "d", {"b": "str"}, ["b"], ["d"], False,
+                         "expected_right_key_dtypes, expected_left_keys, expected_right_keys, "
+                         "should_fail, case", [
+    ({"a": "str", "b": "int"}, None, None, None, {"a": "str", "b": "int"}, {"a": "str", "b": "int"},
+     ["a", "b"], ["a", "b"], False, "on_key_dtypes is specified with a dict"),
+    ("int", ["a", "b"], None, None, {"a": "int", "b": "int"}, {"a": "int", "b": "int"}, ["a", "b"],
+     ["a", "b"], False, "on is specified with a list of column and on_key_dtypes with a dtype"),
+    ("str", "a", None, None, {"a": "str"}, {"a": "str"}, ["a"], ["a"], False,
+     "on is specified with a column"),
+    ("str", None, ["a", "b"], ["a", "d"], {"a": "str", "b": "str"}, {"a": "str", "d": "str"},
+     ["a", "b"], ["a", "d"], False, "left_on and right_on are specified with list of columns"),
+    ("str", None, "b", "d", {"b": "str"}, {"d": "str"}, ["b"], ["d"], False,
      "left_on and right_on are specified with a column"),
-    ({"b": "str", "a": "int"}, None, ["a", "b"], ["a", "d"], {"a": "int", "b": "str"}, ["a", "b"],
-     ["a", "d"], False,
+    ({"b": "str", "a": "int"}, None, ["a", "b"], ["a", "d"], {"a": "int", "b": "str"},
+     {"a": "int", "d": "str"}, ["a", "b"], ["a", "d"], False,
      "on_keys_dtype with left_on columns, left_on and right_on are well specified"),
-    ({"d": "str", "a": "int"}, None, ["a", "b"], ["a", "d"], {"a": "int", "b": "str"}, ["a", "b"],
-     ["a", "d"], False,
+    ({"d": "str", "a": "int"}, None, ["a", "b"], ["a", "d"], {"a": "int", "b": "str"},
+     {"a": "int", "d": "str"}, ["a", "b"], ["a", "d"], False,
      "on_keys_dtype with right_on columns, left_on and right_on are well specified"),
-    ({"a": "str", "b": "int"}, ["a", "b"], None, None, None, None, None, True,
+    ({"a": "str", "b": "int"}, ["a", "b"], None, None, None, None, None, None, True,
      "on_key_dtypes and on should not be specified together if on_key_dtypes is a dict."),
-    ("int", ["a", "b"], "error", None, None, None, None, True,
+    ("int", ["a", "b"], "error", None, None, None, None, None, True,
      "on and left_on should not be specified together"),
-    ("int", ["a", "b"], None, "error", None, None, None, True,
+    ("int", ["a", "b"], None, "error", None, None, None, None, True,
      "on and right_on should not be specified together"),
-    ("int", None, "a", ["a", "b"], None,  None, None, True,
+    ("int", None, "a", ["a", "b"], None,  None, None, None, True,
      "left_on and right_on should have the same size"),
-    ({"a": "str", "c": "int"}, None, ["a", "d"], ["a", "b"], None, None, None, True,
+    ({"a": "str", "c": "int"}, None, ["a", "d"], ["a", "b"], None, None, None, None, True,
      "on_key_dtypes keys should correspond to either left_on columns or right_on columns."),
-    ({"b": "int"}, None, ["a", "d"], ["a", "b"], None, None, None, True,
+    ({"b": "int"}, None, ["a", "d"], ["a", "b"], None, None, None, None, True,
      "on_key_dtypes keys should correspond to either left_on columns or right_on columns.")
 ])
 @pytest.helpers.assert_error
-def test_get_right_left_keys(on_key_dtypes, on, left_on, right_on, expected_left_key_dtypes,
-                             expected_left_keys, expected_right_keys, should_fail, case):
+def test_get_left_right_keys(on_key_dtypes, on, left_on, right_on, expected_left_key_dtypes,
+                             expected_right_key_dtypes, expected_left_keys, expected_right_keys,
+                             should_fail, case):
     # When
-    actual_left_key_dtypes, actual_left_keys, actual_right_keys = _get_left_right_keys(
-        on_key_dtypes, on, left_on, right_on)
+    actual_left_key_dtypes, actual_right_key_dtypes, actual_left_keys, actual_right_keys = \
+        _get_left_right_keys(on_key_dtypes, on, left_on, right_on)
 
     # Then
     if not should_fail:
         assert actual_left_key_dtypes == expected_left_key_dtypes
+        assert actual_right_key_dtypes == expected_right_key_dtypes
         assert actual_left_keys == expected_left_keys
         assert actual_right_keys == expected_right_keys
 
@@ -197,12 +230,12 @@ def test_get_matching_keys_info(keys, other_keys, sum_in_other, size, pct_in_oth
         (["int_key", "mult_int_key", "float1"], ["int_key"], ["mult_int_key"],
          ["int_key", "float1"])
     ])
-def test_drop_right_key_columns(columns, left_keys, right_keys, expected_final_columns):
+def test_drop_other_key_columns(columns, left_keys, right_keys, expected_final_columns):
     # Given
     df = DF_TO_MERGE[columns]
 
     # When
-    final_df = _drop_right_key_columns(df, left_keys, right_keys)
+    final_df = _drop_other_key_columns(df, left_keys, right_keys)
 
     # Then
     assert list(final_df.columns) == expected_final_columns

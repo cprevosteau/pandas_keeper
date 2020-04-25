@@ -2,7 +2,8 @@ import pytest
 import pandas as pd
 import numpy as np
 from tools.pandas.safe_merger import SafeDF, _make_check_na_allowed, _check_keys_in_df, \
-    _check_keys_are_in_df_only_once, _get_left_right_keys
+    _check_keys_are_in_df_only_once, _get_left_right_keys, _check_side_non_key_columns, \
+    _check_right_key_values_unicity, _get_matching_keys_info, _drop_right_key_columns
 
 
 def df_to_merge():
@@ -130,109 +131,78 @@ def test_get_right_left_keys(on_key_dtypes, on, left_on, right_on, expected_left
         assert actual_right_keys == expected_right_keys
 
 
+@pytest.mark.parametrize("columns, other_columns, keys, should_fail, case", [
+        (["int_key", "str1"], ["int_key", "float1"], ["int_key"], False,
+         "DataFrames have not non key columns in common."),
+        (["int_key", "float1"], ["int_key", "float1"], ["int_key"], True,
+         "Dataframes should not have non key columns in common."),
+        (["int_key", "float1"], ["str_key", "str1"], ["int_key"], False,
+         "DataFrames have not non key columns in common. 2"),
+        (["int_key", "float1", "str_key"], ["str_key", "str1"], ["int_key"], True,
+         "DataFrame have key from other on its non key columns.")
+    ])
+@pytest.helpers.assert_error
+def test_check_left_non_key_columns(columns, other_columns, keys, should_fail, case):
+    # Given
+    left_df = DF_TO_MERGE[columns]
+    right_df = DF_TO_MERGE[other_columns]
 
-# @pytest.mark.parametrize("on, left_on, right_on, expected_left_keys, expected_right_keys, "
-#                          "should_fail, case", [
-#     (["a", "b"], None, None, ["a", "b"]),
-# ])
-# @pytest.helpers.assert_error
-# def test_check_get_right_left_keys(on, left_on, right_on, should_fail, case):
+    # When/Then it should fail depending on should_fail
+    _check_side_non_key_columns(left_df, right_df, keys, "left")
 
 
+@pytest.mark.parametrize(
+    "right_keys, should_fail, case",
+    [
+        (["int_key"], False, "Each right key is unique."),
+        (["mult_int_key"], True, "It should not be duplicate right key values."),
+        (["int_key", "mult_str_key"], False, "Each right keys concatenation is unique."),
+        (["mult_int_key", "mult_str_key"], True,
+         "It should not be duplicate right keys concatenations."),
+    ])
+@pytest.helpers.assert_error
+def test_check_right_key_values_unicity(right_keys, should_fail, case):
+    # Given
+    right_concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in right_keys])))
 
-# @pytest.mark.parametrize(
-#     "left_columns, right_columns, keys_dtypes, on, left_on, right_on, left_keys, right_keys, "
-#     "assert_error",
-#     [
-#         (["int_key", "str1"], ["int_key", "float1"], {"int_key": "int"},
-#          None, None, None, ["int_key"], ["int_key"], False),
-#         (["int_key", "str1"], ["str_key", "float1"], {"int_key": "int"},
-#          None, None, None, None, None, True),
-#         (["int_key", "str_key"], ["int_key", "float1"], {"int_key": "int", "str_key": "str"},
-#          "int_key", None, None, ["int_key"], ["int_key"], False),
-#         (["int_key", "str_key"], ["int_key", "float1"], {"int_key": "int", "str_key": "str"},
-#          ["int_key"], None, None, ["int_key"], ["int_key"], False),
-#         (["int_key", "str_key"], ["int_key", "float1"], {"int_key": "int", "str_key": "str"},
-#          None, ["int_key"], "int_key", ["int_key"], ["int_key"], False),
-#         (["int_key", "str_key"], ["mult_col_int_key", "float1"],
-#          {"int_key": "int", "str_key": "str"},
-#          None, ["int_key"], "mult_col_int_key", ["int_key"], ["mult_col_int_key"], False),
-#         (["int_key", "str_key"], ["int_key", "float1"], {"int_key": "int", "str_key": "str"},
-#          None, None, "int_key", ["int_key"], ["int_key"], True),
-#         (["int_key", "str_key", "str1"], ["int_key", "str_key", "float1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key", "str_key"], None, None, ["int_key", "str_key"], ["int_key", "str_key"],
-#          False),
-#     ])
-# @pytest.mark.usefixtures("assert_error")
-# def test_check_get_right_left_keys(df_to_merge, left_columns, right_columns, keys_dtypes,
-#                                    on, left_on, right_on, left_keys, right_keys):
-#     sm = SafeMerger(df_to_merge[left_columns], keys_dtypes)
-#     l_keys, r_keys = sm._check_get_right_left_keys(df_to_merge[right_columns], on, left_on,
-#                                                    right_on)
-#     assert l_keys == left_keys
-#     assert r_keys == right_keys
-#
-# @pytest.mark.parametrize(
-#     "left_columns, right_columns, keys_dtypes, left_keys, right_keys, assert_error", [
-#         (["int_key", "str1"], ["int_key", "float1"], {"int_key": "int"},
-#          ["int_key"], ["int_key"], False),
-#         (["int_key", "float1"], ["int_key", "float1"], {"int_key": "int"},
-#          ["int_key"], ["int_key"], True),
-#         (["int_key", "float1", "str_key"], ["int_key", "str_key", "str1"], {"int_key": "int"},
-#          ["int_key"], ["int_key"], True),
-#         (["int_key", "float1", "str_key"], ["int_key", "str_key", "str1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key"], ["int_key"], True),
-#         (["int_key", "float1", "str_key"], ["int_key", "str_key", "str1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key", "str_key"], ["int_key", "str_key"], False)
-#     ])
-# @pytest.mark.usefixtures("assert_error")
-# def test_check_non_key_columns(self, df_to_merge, left_columns, right_columns, keys_dtypes,
-#                                left_keys, right_keys):
-#     sm = SafeMerger(df_to_merge[left_columns], keys_dtypes)
-#     sm._check_non_key_columns(df_to_merge[right_columns], left_keys, right_keys)
-#
-# @pytest.mark.parametrize(
-#     "left_columns, right_columns, keys_dtypes, left_keys, right_keys, unique_right, assert_error",
-#     [
-#         (["int_key", "str1"], ["int_key", "float1"], {"int_key": "int"},
-#          ["int_key"], ["int_key"], True, False),
-#         (["int_key", "float1"], ["mult_int_key", "float1"], {"int_key": "int"},
-#          ["int_key"], ["mult_int_key"], True, True),
-#         (["int_key", "float1"], ["mult_int_key", "float1"], {"int_key": "int"},
-#          ["int_key"], ["mult_int_key"], False, False),
-#         (["int_key", "float1", "str_key"], ["int_key", "mult_str_key", "str1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key", "str_key"], ["int_key", "mult_str_key"], True, False),
-#         (["int_key", "float1", "str_key"], ["mult_int_key", "mult_str_key", "str1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key", "str_key"], ["mult_int_key", "mult_str_key"], True, True),
-#         (["int_key", "float1", "str_key"], ["mult_int_key", "mult_str_key", "str1"],
-#          {"int_key": "int", "str_key": "str"},
-#          ["int_key", "str_key"], ["mult_int_key", "mult_str_key"], False, False)
-#     ])
-# @pytest.mark.usefixtures("assert_error")
-# def test_check_unicity_and_matching_key_values(self, df_to_merge, left_columns, right_columns,
-#                                                keys_dtypes,
-#                                                left_keys, right_keys, unique_right):
-#     sm = SafeMerger(df_to_merge[left_columns], keys_dtypes)
-#     sm._check_unicity_and_matching_key_values(df_to_merge[right_columns], left_keys, right_keys,
-#                                               unique_right)
-#
-# @pytest.mark.parametrize(
-#     "columns, keys_dtypes, left_keys, right_keys, right_cols_in_df, assert_error", [
-#         (["int_key", "str1"], {"int_key": "int"}, ["int_key"], ["int_key"], ["int_key"], False),
-#         (["int_key", "mult_int_key", "float1"], {"int_key": "int"}, ["int_key"],
-#          ["mult_int_key"], ["int_key"], False),
-#         (["int_key", "mult_int_key", "float1"], {"int_key": "int"}, ["int_key"],
-#          ["mult_int_key"], ["mult_int_key"], True),
-#     ])
-# @pytest.mark.usefixtures("assert_error")
-# def test_drop_right_key_columns(self, df_to_merge, columns, keys_dtypes, left_keys, right_keys,
-#                                 right_cols_in_df):
-#     sm = SafeMerger(df_to_merge[columns].copy(), keys_dtypes)
-#     sm._drop_right_key_columns(left_keys, right_keys)
-#     for col in right_cols_in_df:
-#         assert col in sm.df.columns
+    # When/Then it should fail depending on should_fail
+    _check_right_key_values_unicity(right_concat_keys)
+
+
+@pytest.mark.parametrize(
+    "keys, other_keys, sum_in_other, size, pct_in_other",
+    [
+        (["int_key"], ["int_key"], 20, 20, 100.),
+        (["int_key"], ["mult_int_key"], 10, 20, 50.),
+        (["mult_int_key"], ["int_key"], 20, 20, 100.),
+        (["int_key", "mult_int_key"], ["mult_int_key", "mult_int_key"], 10, 20, 50.)
+    ])
+def test_get_matching_keys_info(keys, other_keys, sum_in_other, size, pct_in_other):
+    # Given
+    concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in keys])))
+    other_concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in other_keys])))
+
+    # When
+    actual_sum_in_other, actual_size, actual_pct_in_other = _get_matching_keys_info(
+        concat_keys, other_concat_keys)
+
+    # Then
+    assert actual_sum_in_other == sum_in_other
+    assert actual_size == size
+    assert actual_pct_in_other == pct_in_other
+
+
+@pytest.mark.parametrize("columns, left_keys, right_keys, expected_final_columns", [
+        (["int_key", "str1"], ["int_key"], ["int_key"], ["int_key", "str1"]),
+        (["int_key", "mult_int_key", "float1"], ["int_key"], ["mult_int_key"],
+         ["int_key", "float1"])
+    ])
+def test_drop_right_key_columns(columns, left_keys, right_keys, expected_final_columns):
+    # Given
+    df = DF_TO_MERGE[columns]
+
+    # When
+    final_df = _drop_right_key_columns(df, left_keys, right_keys)
+
+    # Then
+    assert list(final_df.columns) == expected_final_columns

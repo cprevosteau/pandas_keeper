@@ -2,11 +2,14 @@ import pandas as pd
 from tools import LOGGER
 from tools.pandas.assert_check import assert_column_values, assert_type, replace_check
 
+SIDES = ["left", "right"]
+
 
 def _to_list(val):
     if type(val) == list:
         return val
     return [val]
+
 
 def _make_check_na_allowed(na_allowed_arg, keys):
     """Make a `na_allowed` of the form key_column -> is_na_allowed (bool)."""
@@ -105,20 +108,38 @@ def _get_left_right_keys(on_key_dtypes, on, left_on, right_on):
     return left_key_dtypes, left_on, right_on
 
 
-# def _check_non_key_columns(self, other, left_keys, right_keys):
-#     """Check that left and right DataFrames have not columns in common except key columns from both."""
-#     left_non_key_cols = set(self.df.columns) - set(left_keys)
-#     right_common_cols = set(other.columns) & (left_non_key_cols)
-#     assert len(right_common_cols) == 0, (
-#             "The right DataFrame must not have columns in common with non-key columns of the left DataFrame: %s"
-#             % list(right_common_cols))
-#     right_non_key_cols = set(other) - set(right_keys)
-#     left_common_cols = set(self.df.columns) & (right_non_key_cols)
-#     assert len(left_common_cols) == 0, (
-#             "The left DataFrame must not have columns in common with non-key columns of the right DataFrame: %s"
-#             % list(right_common_cols))
-#
-# def _check_unicity_and_matching_key_values(self, other, left_keys, right_keys, unique_right):
+def _check_side_non_key_columns(df, other_df, keys, df_side):
+    other_side = (set(SIDES) - {df_side}).pop()
+    df_non_key_cols = set(df.columns) - set(keys)
+    df_common_cols = set(other_df.columns) & df_non_key_cols
+    assert len(df_common_cols) == 0, "The %s DataFrame non key columns should not have " \
+        "these columns in common with columns of the %s DataFrame: %s" % (
+        df_side, other_side, list(df_common_cols))
+
+
+def _check_right_key_values_unicity(right_concat_keys):
+    val_key = right_concat_keys.value_counts(dropna=False)
+    wrong_keys = list(val_key[val_key > 1].index)
+    assert len(
+        wrong_keys) == 0, "Each of these key values are present on multiple rows: %s" % wrong_keys
+
+
+def _get_matching_keys_info(concat_keys, other_concat_keys):
+    isin = concat_keys.isin(other_concat_keys)
+    return isin.sum(), isin.shape[0], isin.mean() * 100
+
+
+def _drop_right_key_columns(df, left_keys, right_keys):
+    key_cols_to_drop = list(set(right_keys) - set(left_keys))
+    return df.drop(columns=key_cols_to_drop)
+
+
+def safe_merge(left_df, right_df, how, on_keys_dtypes="str", on=None, left_on=None, right_on=None,
+               na_allowed=None,
+               left_na_allowed=None, right_na_allowed=None, unique_right=True, keep_left_keys=True,
+               keep_right_keys=False)
+
+# def _check_unicity_and_matching_key_values(left_df, right_df, left_keys, right_keys, unique_right):
 #     """Check unicity and matching of key values.
 #
 #     If unique_right is True, assert that each concatenation of the key column values are unique in the right DataFrame.
@@ -139,9 +160,7 @@ def _get_left_right_keys(on_key_dtypes, on, left_on, right_on):
 #     LOGGER.logger.info("Right key values in left table: %s / %s, %.2f%%" % (
 #         right_isin.sum(), right_isin.shape[0], right_isin.mean() * 100))
 #
-# def _drop_right_key_columns(self, left_keys, right_keys):
-#     key_cols_to_drop = list(set(right_keys) - set(left_keys))
-#     self.df.drop(columns=key_cols_to_drop, inplace=True)
+
 #
 # def merge(self, other, how="inner", on=None, left_on=None, right_on=None, na_allowed=False,
 #           unique_right=True, keep_right_keys=False):

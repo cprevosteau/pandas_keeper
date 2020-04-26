@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import pytest
 from pytest_lazyfixture import lazy_fixture
-import pandas as pd
+import pandas_tools as pd
 import numpy as np
 import time
 from tools.logger import Stringer, Logger

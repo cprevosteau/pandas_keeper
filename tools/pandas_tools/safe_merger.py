@@ -1,14 +1,14 @@
 import pandas as pd
 from tools import LOGGER
-from tools.pandas.assert_check import assert_column_values, assert_type, replace_check
+from tools.pandas_tools.assert_check import assert_type
 
 SIDES = ["left", "right"]
 
 
 def safe_merge(left_df, right_df, how="left", on_key_dtypes="str", on=None, left_on=None,
-               right_on=None, na_allowed=None, left_na_allowed=None, right_na_allowed=None,
+               right_on=None, na_allowed=False, left_na_allowed=None, right_na_allowed=None,
                drop_side_keys="right", suffixes=(False, False), validate="many_to_one",
-               **merge_kwargs):
+               logger=LOGGER.logger, **merge_kwargs):
     left_keys_dtypes, right_key_dtypes, left_keys, right_keys = _get_left_right_keys(
         on_key_dtypes, on, left_on, right_on)
 
@@ -24,9 +24,9 @@ def safe_merge(left_df, right_df, how="left", on_key_dtypes="str", on=None, left
     left_concat_keys = _concat_keys(left_df, left_keys)
     right_concat_keys = _concat_keys(right_df, right_keys)
 
-    LOGGER.info("Left key values in right table: %s / %s, %.2f%%" % _get_matching_keys_info(
+    logger.info("Left key values in right table: %s / %s, %.2f%%" % _get_matching_keys_info(
         left_concat_keys, right_concat_keys))
-    LOGGER.info("Right key values in left table: %s / %s, %.2f%%" % _get_matching_keys_info(
+    logger.info("Right key values in left table: %s / %s, %.2f%%" % _get_matching_keys_info(
         right_concat_keys, left_concat_keys))
 
     merged_df = left_df.merge(right_df, how=how, left_on=left_keys, right_on=right_keys,
@@ -38,9 +38,6 @@ def safe_merge(left_df, right_df, how="left", on_key_dtypes="str", on=None, left
     return merged_df
 
 
-
-
-
 def _to_list(val):
     if type(val) == list:
         return val
@@ -49,6 +46,7 @@ def _to_list(val):
 
 def _concat_keys(df, keys):
     return pd.Series(list(zip(*[df[col] for col in keys])))
+
 
 def _get_check_na_allowed_args(na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg):
     if na_allowed_arg is None:
@@ -186,4 +184,3 @@ def _get_matching_keys_info(concat_keys, other_concat_keys):
 def _drop_other_key_columns(df, keys, other_keys):
     key_cols_to_drop = list(set(other_keys) - set(keys))
     return df.drop(columns=key_cols_to_drop)
-

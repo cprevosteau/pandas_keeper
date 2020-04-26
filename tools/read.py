@@ -1,6 +1,6 @@
 import json
 import pickle as pk
-import safe_merger as pd
+import pandas as pd
 from tools import LOGGER
 
 

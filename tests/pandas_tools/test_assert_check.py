@@ -1,6 +1,6 @@
-import pandas as pd
+import pandas_tools as pd
 import pytest
-from tools.pandas.assert_check import replace_check, assert_column_values, assert_type
+from tools.pandas_tools.assert_check import replace_check, assert_column_values, assert_type
 
 DF = pd.DataFrame({
     "str_range_10": list(map(str, range(10))),

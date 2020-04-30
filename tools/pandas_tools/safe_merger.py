@@ -84,7 +84,7 @@ def _check_keys_are_in_df_only_once(df, keys):
 
 def _check_key_columns_have_the_right_types_and_missing_values(df, keys, dtypes, na_allowed):
     for col, dtype, na in [(key, dtypes[key], na_allowed[key]) for key in keys]:
-        assert_type(df, col, dtype, na)
+        assert_type(df[col], dtype, na)
 
 
 def _check_key_columns(df, keys, dtypes, na_allowed):

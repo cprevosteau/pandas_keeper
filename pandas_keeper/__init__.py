@@ -1,6 +1,6 @@
 from pandas.core.frame import DataFrame, Series
-from .safe_merger import safe_merge
 from .assert_check import assert_type, assert_values, safe_replace
+from .safe_merger import safe_merge
 
 
 def patch_pandas():

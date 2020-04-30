@@ -1,6 +1,6 @@
 import pandas as pd
 import pytest
-from tools.pandas_tools import patch_pandas
+from pandas_keeper import patch_pandas
 
 DF_TO_MERGE = pytest.helpers.df_to_merge()
 NEW_DF_METHODS = ["safe_merge", "safe_replace"]

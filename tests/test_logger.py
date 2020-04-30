@@ -1,10 +1,10 @@
 from collections import OrderedDict
 import pytest
 from pytest_lazyfixture import lazy_fixture
-import pandas_tools as pd
+import pandas as pd
 import numpy as np
 import time
-from tools.logger import Stringer, Logger
+from pandas_keeper.logger import Stringer, Logger
 
 
 @pytest.fixture(scope="module")

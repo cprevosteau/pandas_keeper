@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
-from tools.pandas_tools.assert_check import safe_replace, assert_values, assert_type
+
+from pandas_keeper.assert_check import safe_replace, assert_values, assert_type
 
 DF = pd.DataFrame({
     "str_range_10": list(map(str, range(10))),
@@ -42,46 +43,83 @@ def test_assert_values(pds, values, should_fail, case):
     assert_values(pds, values), case
 
 
-@pytest.mark.parametrize("df, values_dic, kw, should_fail, case", [
+@pytest.mark.parametrize("df, values_dic, kw, expected_df_dic, should_fail, case", [
     (
             DF[["str_range_10", "str_range_10_with_nan"]],
             {
                 "str_range_10": {str(i): chr(97 + i) for i in range(10)},
                 "str_range_10_with_nan": {str(i): chr(97 + i) for i in range(15)}},
-            {}, False, "normal case with one column with nan values should succeed"
+            {"inplace": True}, {
+                "str_range_10": [chr(97 + i) for i in range(10)],
+                "str_range_10_with_nan": [chr(97 + i) for i in range(7)] +
+                                         [None, chr(97 + 8), None]},
+            False, "normal case with one column with nan values should succeed"
+    ),
+    (
+            DF[["str_range_10", "str_range_10_with_nan"]],
+            {
+                "str_range_10": {str(i): chr(97 + i) for i in range(10)},
+                "str_range_10_with_nan": {str(i): chr(97 + i) for i in range(15)}},
+            {"inplace": False}, {
+                "str_range_10": [chr(97 + i) for i in range(10)],
+                "str_range_10_with_nan": [chr(97 + i) for i in range(7)] +
+                                         [None, chr(97 + 8), None]},
+            False, "normal case with one column with nan values should succeed"
     ),
     (
             DF[["str_range_10"]],
             {"str_range_10": {str(i): chr(97 + i) for i in range(9)}},
-            {}, True, "Missing values to replace should fail"
+            {}, {}, True, "Missing values to replace should fail"
     ), (
             DF[["str_range_10_with_spaces", "str_range_10_with_nan_with_spaces"]],
             {
                 "str_range_10_with_spaces": {str(i): chr(97 + i) for i in range(10)},
                 "str_range_10_with_nan_with_spaces": {str(i): chr(97 + i) for i in range(10)}},
-            {"strip": True}, False, "non strip values with strip option should succeed"
+            {"strip": True}, {
+                "str_range_10_with_spaces": [chr(97 + i) for i in range(10)],
+                "str_range_10_with_nan_with_spaces": [chr(97 + i) for i in range(7)] +
+                                                     [None, chr(97 + 8), None]},
+            False, "non strip values with strip option should succeed"
     ), (
             DF[["str_range_10_with_spaces", "str_range_10_with_nan_with_spaces"]],
             {
                 "str_range_10_with_spaces": {str(i): chr(97 + i) for i in range(10)},
-                "str_range_10_with_nan_with_spaces": {str(i): chr(97 + i) for i in range(10)}},
-            {"strip": False}, True, "non strip values without strip option should fail"
+                "str_range_10_with_nan_with_spaces": [chr(97 + i) for i in range(7)] +
+                                                     [None, chr(97 + 8), None]},
+            {"strip": False}, {}, True, "non strip values without strip option should fail"
     ), (
             DF[["a_j", "A_J"]],
             {"a_j": {chr(97 + i).upper(): i for i in range(10)},
              "A_J": {chr(97 + i): i for i in range(10)}},
-            {"lower": True}, False, "given uppercase values, it should succeed with lower options"
+            {"lower": True}, {
+                "a_j": [i for i in range(10)],
+                "A_J": [i for i in range(10)]},
+            False, "given uppercase values, it should succeed with lower options"
     ), (
             DF[["a_j", "A_J"]],
             {"a_j": {chr(97 + i).upper(): i for i in range(10)},
              "A_J": {chr(97 + i): i for i in range(10)}},
-            {"lower": False}, True, "given uppercase values, it should fail without lower options"
+            {"lower": False}, {}, True,
+            "given uppercase values, it should fail without lower options"
     )
 ])
 @pytest.helpers.assert_error
-def test_safe_replace(df, values_dic, kw, case, should_fail):
-    # When/Then depending on should_fail
-    safe_replace(df, values_dic, **kw)
+def test_safe_replace(df, values_dic, kw, expected_df_dic, should_fail, case):
+    # Given
+    df = df.copy()
+    expected_df = pd.DataFrame(expected_df_dic)
+    inplace = kw.get("inplace", False)
+
+    # When
+    replaced_df = safe_replace(df, values_dic, **kw)
+    if inplace:
+        actual_df = df
+    else:
+        actual_df = replaced_df
+
+    # Then
+    if not should_fail:
+        pd.testing.assert_frame_equal(actual_df, expected_df)
 
 
 @pytest.mark.parametrize("pds, dtype, na_allowed, should_fail, case", [

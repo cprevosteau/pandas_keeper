@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from tools.pandas_tools.safe_merger import _make_check_na_allowed, _check_keys_in_df, \
+from pandas_keeper.safe_merger import _make_check_na_allowed, _check_keys_in_df, \
     _check_keys_are_in_df_only_once, _get_left_right_keys, _check_side_non_key_columns, \
     _check_right_key_values_unicity, _get_matching_keys_info, _drop_other_key_columns, \
     _get_check_na_allowed_args, safe_merge

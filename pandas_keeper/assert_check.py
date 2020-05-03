@@ -1,3 +1,12 @@
+from typing import Sized, Dict, Union
+import pandas as pd
+from pandas import DataFrame, Series
+
+
+def _assert_empty_wrong_values(wrong_values: Sized, msg: str) -> None:
+    assert len(wrong_values) == 0, msg
+
+
 def assert_values(pds, values):
     """Assert that the column has values among expected ones.
 
@@ -7,13 +16,16 @@ def assert_values(pds, values):
     """
     nn_col = pds[pds.notnull()]
     nn_col_in = nn_col.isin(values)
-    assert nn_col_in.min() == 1, (
-            "These values should not be present in the pandas Series %s: %s" %
-            (pds.name, list(nn_col[~nn_col_in].unique()))
-    )
+    wrong_values = set(nn_col[~nn_col_in])
+    _assert_empty_wrong_values(wrong_values,
+                               "These values should not be present in the pandas Series %s: %s" %
+                               (pds.name, wrong_values))
 
 
-def safe_replace(df, values, strip=True, lower=False, inplace=False):
+def safe_replace(df: DataFrame, values: Dict[str, Dict],
+                 strip: Union[bool, Dict[str, bool]] = True,
+                 lower: Union[bool, Dict[str, bool]] = False,
+                 inplace: bool = False):
     """Replace values in the dataframe and check that values are among the expected ones.
 
     Args:
@@ -28,17 +40,30 @@ def safe_replace(df, values, strip=True, lower=False, inplace=False):
     """
     if not inplace:
         df = df.copy()
-    for col, replace_dic in values.items():
-        if strip and df.dtypes[col] == "object":
-            str_idx = df[col].map(lambda x: isinstance(x, str))
-            df.loc[str_idx, col] = df.loc[str_idx, col].str.strip()
-        if lower and df.dtypes[col] == "object":
-            str_idx = df[col].map(lambda x: isinstance(x, str))
-            df.loc[str_idx, col] = df.loc[str_idx, col].str.lower()
-            replace_dic = {k.lower(): v for k, v in replace_dic.items()}
-        df[col].replace(replace_dic, inplace=True)
-        assert_values(df[col], replace_dic.values())
+    if isinstance(strip, bool):
+        strip = {col: strip for col in values}
+    if isinstance(lower, bool):
+        lower = {col: lower for col in values}
+    with pd.option_context('mode.chained_assignment', None):
+        for col, replace_dic in values.items():
+            safe_replace_series(df[col], replace_dic, strip[col], lower[col], inplace=True)
     return df
+
+
+def safe_replace_series(pds: Series, values: Dict, strip: bool = True,
+                        lower: bool = False, inplace=False) -> Series:
+    if not inplace:
+        pds = pds.copy()
+    if strip and pds.dtype == "object":
+        str_idx = pds.map(lambda x: isinstance(x, str))
+        pds.loc[str_idx] = pds.loc[str_idx].str.strip()
+    if lower and pds.dtype == "object":
+        str_idx = pds.map(lambda x: isinstance(x, str))
+        pds.loc[str_idx] = pds.loc[str_idx].str.lower()
+        values = {k.lower(): v for k, v in values.items()}
+    pds.replace(values, inplace=True)
+    assert_values(pds, values.values())
+    return pds
 
 
 def assert_type(pds, dtype, na_allowed):
@@ -55,7 +80,6 @@ def assert_type(pds, dtype, na_allowed):
         assert nn_idx.min() == 1, "The Series %s should not have null values." % pds.name
     nn_col = pds[nn_idx]
     wrong_values = set(nn_col[nn_col != nn_col.astype(dtype)])
-    assert len(wrong_values) == 0, (
-            "The Series %s has value(s) of a type different from %s: %s" %
-            (pds.name, dtype, list(wrong_values))
-    )
+    _assert_empty_wrong_values(wrong_values,
+                               "The Series %s has value(s) of a type different from %s: %s" %
+                               (pds.name, dtype, wrong_values))

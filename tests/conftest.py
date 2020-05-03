@@ -1,12 +1,20 @@
 import sys
-import os.path as osp
+from pathlib import Path
 import pytest
 from functools import wraps
 import pandas as pd
 import numpy as np
-sys.path.insert(0, osp.normpath(osp.join(osp.dirname(__file__), osp.pardir)))
-
+from shutil import copytree
+TEST_FOLDER = Path(__file__).parent
+sys.path.insert(0, str(TEST_FOLDER.parent))
 pytest_plugins = ['helpers_namespace']
+
+
+@pytest.fixture()
+def test_folder(tmp_path):
+    dst = tmp_path / "data"
+    copytree(TEST_FOLDER / "data", dst)
+    return dst
 
 
 @pytest.helpers.register

@@ -1,7 +1,9 @@
 import os
 import json
 import pickle as pk
-from pandas_keeper import LOGGER
+from pandas_keeper.logger import Logger
+
+LOGGER = Logger()
 
 
 @LOGGER.timeit

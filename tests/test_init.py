@@ -4,7 +4,7 @@ from pandas_keeper import patch_pandas
 
 DF_TO_MERGE = pytest.helpers.df_to_merge()
 NEW_DF_METHODS = ["safe_merge", "safe_replace"]
-NEW_SERIES_METHODS = ["assert_type", "assert_values"]
+NEW_SERIES_METHODS = ["assert_type", "assert_values", "safe_replace"]
 
 
 def test_new_df_series_methods_become_it_only_after_pandas_tools_is_imported():
@@ -67,3 +67,17 @@ def test_assert_type_as_a_method_of_a_series():
 
     # When/Then
     pds.assert_type("int", na_allowed=True)
+
+
+def test_safe_replace_as_a_method_of_a_series():
+    # Given
+    patch_pandas()
+    pds = pd.Series(range(10))
+    expected_pds = pd.Series(str(i) for i in range(10))
+    values = {i: str(i) for i in range(10)}
+
+    # When
+    actual_pds = pds.safe_replace(values)
+
+    # Then
+    pd.testing.assert_series_equal(actual_pds, expected_pds)

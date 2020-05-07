@@ -8,7 +8,7 @@ from typing import Dict, Callable
 LOGGER = Logger()
 
 
-class DataReaderExtension(str, Enum):
+class DataReaderExtension(Enum):
     csv = "csv"
     txt = "txt"
     pq = "pq"
@@ -34,5 +34,4 @@ DATA_READER: Dict[DataReaderExtension, Callable[..., DataFrame]] = {
 @LOGGER.timeit
 def read_data(file_path: Path, file_reader_extension: DataReaderExtension,
               *args, **kw) -> DataFrame:
-    with file_path.open() as f:
-        return DATA_READER[file_reader_extension](f, *args, **kw)
+    return DATA_READER[file_reader_extension](file_path, *args, **kw)

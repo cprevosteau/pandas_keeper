@@ -1,4 +1,4 @@
-from typing import Sized, Dict, Union
+from typing import Sized, Dict, Union, Optional
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -51,7 +51,7 @@ def safe_replace(df: DataFrame, values: Dict[str, Dict],
 
 
 def safe_replace_series(pds: Series, values: Dict, strip: bool = True,
-                        lower: bool = False, inplace=False) -> Series:
+                        lower: bool = False, inplace=False) -> Optional[Series]:
     if not inplace:
         pds = pds.copy()
     if strip and pds.dtype == "object":
@@ -63,7 +63,19 @@ def safe_replace_series(pds: Series, values: Dict, strip: bool = True,
         values = {k.lower(): v for k, v in values.items()}
     pds.replace(values, inplace=True)
     assert_values(pds, values.values())
-    return pds
+    if not inplace:
+        return pds
+    return None
+
+
+def assert_non_null_idx(pds: Series, na_allowed: bool,
+                        return_value: bool = False) -> Optional[Series]:
+    nn_idx = pds.notnull()
+    if not na_allowed:
+        assert nn_idx.min() == 1, "The Series %s should not have null values." % pds.name
+    if return_value:
+        return nn_idx
+    return None
 
 
 def assert_type(pds, dtype, na_allowed):
@@ -75,10 +87,8 @@ def assert_type(pds, dtype, na_allowed):
         na_allowed (bool): Are N/A values allowed ?
 
     """
-    nn_idx = pds.notnull()
-    if not na_allowed:
-        assert nn_idx.min() == 1, "The Series %s should not have null values." % pds.name
-    nn_col = pds[nn_idx]
+    non_null_idx = assert_non_null_idx(pds, na_allowed, return_value=True)
+    nn_col = pds[non_null_idx]
     wrong_values = set(nn_col[nn_col != nn_col.astype(dtype)])
     _assert_empty_wrong_values(wrong_values,
                                "The Series %s has value(s) of a type different from %s: %s" %

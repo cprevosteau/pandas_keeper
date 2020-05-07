@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 from pandas import DataFrame, Series
 from pandas_keeper.assert_check import safe_replace, assert_values, assert_type, \
-    safe_replace_series
+    safe_replace_series, assert_non_null_idx
 
 DF = pd.DataFrame({
     "str_range_10": list(map(str, range(10))),
@@ -194,3 +194,26 @@ def test_safe_replace_series(pds: Series, values_dic, kw, expected_pds_list, sho
 def test_assert_type(pds, dtype, na_allowed, should_fail, case):
     # When/Then it should fail depending on should_fail
     assert_type(pds, dtype, na_allowed)
+
+
+@pytest.mark.parametrize("pds, na_allowed, return_value, expected_returned_value, should_fail, "
+                         "case", [
+    (pd.Series(["1", "2"]), False, False, None, False, "non null values, without returning values"),
+    (pd.Series([2, 1]), False, True, pd.Series([True, True]), False,
+     "non null values, returning values"),
+    (pd.Series([2, 1, None, 3]), False, True, None, True, "should fail because of null values"),
+    (pd.Series([2, 1, None, 3]), True, True, pd.Series([True, True, False, True]), False,
+     "should return non null index")
+])
+@pytest.helpers.assert_error
+def test_assert_non_null_idx(pds, na_allowed, return_value, expected_returned_value, should_fail,
+                             case):
+    # When
+    actual_non_null_idx = assert_non_null_idx(pds, na_allowed, return_value)
+
+    # Then
+    if not should_fail:
+        if expected_returned_value is not None:
+            pd.testing.assert_series_equal(actual_non_null_idx, expected_returned_value)
+        else:
+            assert actual_non_null_idx is None

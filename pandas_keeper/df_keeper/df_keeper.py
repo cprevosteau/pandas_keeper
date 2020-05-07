@@ -12,7 +12,7 @@ class DFKeeper(BaseModel):
     reader: DataReaderExtension
     read_arguments: Dict[str, Any] = dict()
     columns: List[ColumnKeeper] = list()
-    keep_all_columns: bool = False
+    keep_only: bool = False
 
     @root_validator(pre=True)
     def set_reader(cls, values) -> Dict[str, Any]:

@@ -3,17 +3,58 @@ import pandas as pd
 import pytest
 
 
-DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": ["b", "c", "c", "d"]})
+DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": [1, 2, 3, 4]})
 
 
 @pytest.mark.parametrize("schema, expected_df, should_fail, case", [
-    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_all_columns": True},
+    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_only": False},
      DATA_DF, False, "Just read a csv"),
-    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_all_columns": False},
-     DATA_DF[[]], False, "Read a csv but do not keep not specified columns."),
-    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_all_columns": False,
+    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_only": True,
       "columns": [{"name": "Column 2"}]},
-     DATA_DF[["Column 2"]], False, "Read a csv but do not keep not specified columns.")
+     DATA_DF[["Column 2"]], False, "Read a csv but keep only specified columns."),
+    ({
+         "file_path": "data.csv",
+         "read_arguments": {"sep": ";"},
+         "keep_only": True,
+         "columns": [
+             {
+                 "name": "Error"
+             },
+             {
+                 "name": "Column 2"
+             }]},
+     None, True, "Error in column name."),
+    ({
+             "file_path": "data.csv",
+             "read_arguments": {"sep": ";"},
+             "keep_only": True,
+             "columns": [
+                 {
+                     "name": "Column 1",
+                     "rename": "col_1"
+                 },
+                 {
+                     "name": "Column 2",
+                     "drop": True
+                 }
+             ]
+     },
+     pd.DataFrame({"col_1": ["a", "b", "a", None]}), False, "Drop Column 2 and rename Column 1."),
+    ({
+         "file_path": "data.csv",
+         "read_arguments": {"sep": ";"},
+         "keep_only": False,
+         "columns": [
+             {
+                 "name": "Column 1",
+                 "actions": [{"name": "fillna", "args": "c"}],
+                 "dtype": str,
+                 "rename": "col_1"
+             }
+         ]
+     },
+     pd.DataFrame({"col_1": ["a", "b", "a", "c"], "Column 2": [1, 2, 3, 4]}), False,
+     "treat column 1 but not column 2.")
 ])
 @pytest.helpers.assert_error
 def test_import_df(test_folder, schema, expected_df, should_fail, case):

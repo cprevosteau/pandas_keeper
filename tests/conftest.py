@@ -10,10 +10,15 @@ sys.path.insert(0, str(TEST_FOLDER.parent))
 pytest_plugins = ['helpers_namespace']
 
 
+@pytest.fixture(scope="session")
+def data_folder():
+    return TEST_FOLDER / "data"
+
+
 @pytest.fixture()
-def test_folder(tmp_path):
+def test_folder(tmp_path, data_folder):
     dst = tmp_path / "data"
-    copytree(TEST_FOLDER / "data", dst)
+    copytree(data_folder, dst)
     return dst
 
 

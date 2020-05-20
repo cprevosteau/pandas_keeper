@@ -80,7 +80,7 @@ def test_check_df_keeper_columns_are_in_df(df, df_keeper, should_fail, case):
      Series([*map(str, range(7)), "NA", "8", "NA"])),
     (Series(range(10)), ColumnAction(name="replace", args={9: "9"}),
      Series((*range(9), "9"))),
-    (Series([*map(str, range(7)), None, 8, None]),
+    (Series([*map(str, range(7)), None, "8", None]),
      ColumnAction(name="safe_replace", args={str(i): i for i in range(10)}),
      Series([*range(7), None, 8, None]))
 ])
@@ -89,6 +89,7 @@ def test_transform_column(pds, action, expected_pds):
     actual_pds = transform_column(pds, action)
 
     # Then
+    print(actual_pds)
     pd.testing.assert_series_equal(actual_pds, expected_pds)
 
 

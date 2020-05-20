@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "pandas_keeper"
+version = "0.1.0"
+description = "A Keeper of Pandas Operations"
+authors = ["Clement PREVOSTEAU <cprevosteau@gmail.com>"]
+license = "BSD-3-Clause"
+
+[tool.poetry.dependencies]
+python = "~=3.6, >=3.6.1"
+pandas = ">= 1.0.0"
+pydantic = ">= 1.0"
+pyarrow = { version = ">= 0.16.0", optional = true }
+xlrd = { version = ">= 1.0.0", optional = true }
+
+[tool.poetry.extras]
+excel = ["xlrd"]
+parquet = ["pyarrow"]
+
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+pytest-flake8 = "*"
+pytest-helpers-namespace = "*"
+pytest-lazy-fixture = "*"
+pytest-mypy = "*"
+XlsxWriter = "*"
+openpyxl = "*"
+
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

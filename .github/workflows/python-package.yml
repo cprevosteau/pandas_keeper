@@ -43,7 +43,7 @@ jobs:
         path: |
           .venv
           ${{ steps.pip-cache.outputs.dir }}
-        key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.pyhon-version }}
+        key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |

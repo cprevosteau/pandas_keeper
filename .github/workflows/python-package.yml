@@ -40,10 +40,8 @@ jobs:
       env:
         cache-name: cache-venv-pip
       with:
-        path:
-          - ${{ pip_cache_dir }}
-          - .venv
-        key: ${{ env.cache-name }}
+        path: [${{ pip_cache_dir }}, .venv]
+        key: ${{ env.cache-name }}-${{ runner.os }}-${{ matrix.pyhon-version }}
     - name: Install dependencies
       run: |
         pip install poetry

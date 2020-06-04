@@ -41,7 +41,7 @@ jobs:
         cache-name: cache-venv-pip
       with:
         path:
-          - ${{ pip_cache_dir}}
+          - ${{ pip_cache_dir }}
           - .venv
         key: ${{ env.cache-name }}
     - name: Install dependencies

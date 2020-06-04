@@ -23,6 +23,7 @@ pytest-flake8 = "*"
 pytest-helpers-namespace = "*"
 pytest-lazy-fixture = "*"
 pytest-mypy = "*"
+pytest-faulthandler = "*"
 xlwt = "*"
 openpyxl = "*"
 

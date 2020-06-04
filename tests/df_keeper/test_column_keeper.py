@@ -74,7 +74,7 @@ def test_check_df_keeper_columns_are_in_df(df, df_keeper, should_fail, case):
 
 
 @pytest.mark.parametrize("pds, action, expected_pds", [
-    (Series((str(i) for i in range(10))), ColumnAction(name="astype", args=[int]),
+    (Series((str(i) for i in range(10))), ColumnAction(name="astype", args=["int64"]),
      Series(range(10))),
     (Series([*map(str, range(7)), None, "8", None]), ColumnAction(name="fillna", args="NA"),
      Series([*map(str, range(7)), "NA", "8", "NA"])),
@@ -89,7 +89,6 @@ def test_transform_column(pds, action, expected_pds):
     actual_pds = transform_column(pds, action)
 
     # Then
-    print(actual_pds)
     pd.testing.assert_series_equal(actual_pds, expected_pds)
 
 
@@ -97,7 +96,7 @@ def test_treat_column():
     # Given
     col_name = "col1"
     pds = pd.Series(range(10), name=col_name)
-    column_keeper = ColumnKeeper(name=col_name, dtype=int, actions=[
+    column_keeper = ColumnKeeper(name=col_name, dtype="int64", actions=[
         ColumnAction(name="safe_replace", args=[{i: str(i) for i in range(10)}]),
         ColumnAction(name="astype", args=[int])
     ], nullable=False)

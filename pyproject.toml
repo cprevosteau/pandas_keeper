@@ -24,7 +24,6 @@ pytest-helpers-namespace = "*"
 pytest-lazy-fixture = "*"
 mypy = "== 0.770"
 pytest-mypy = "*"
-pytest-faulthandler = "*"
 xlwt = "*"
 openpyxl = "*"
 

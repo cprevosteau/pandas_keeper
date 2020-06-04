@@ -96,9 +96,9 @@ def test_treat_column():
     # Given
     col_name = "col1"
     pds = pd.Series(range(10), name=col_name)
-    column_keeper = ColumnKeeper(name=col_name, dtype="int64", actions=[
+    column_keeper = ColumnKeeper(name=col_name, dtype=int, actions=[
         ColumnAction(name="safe_replace", args=[{i: str(i) for i in range(10)}]),
-        ColumnAction(name="astype", args=[int])
+        ColumnAction(name="astype", args=["int64"])
     ], nullable=False)
     expected_pds = pd.Series((i for i in range(10)), name=col_name)
 

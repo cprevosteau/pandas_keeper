@@ -36,14 +36,14 @@ jobs:
         pip cache dir
         echo "::set-env name=pip_cache_dir::`pip cache dir`"
     - name: Cache Python Environment and pip
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-venv-pip
-        with:
-          path:
-            - ${{ pip_cache_dir}}
-            - .venv
-          key: ${{ env.cache-name }}
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-venv-pip
+      with:
+        path:
+          - ${{ pip_cache_dir}}
+          - .venv
+        key: ${{ env.cache-name }}
     - name: Install dependencies
       run: |
         pip install poetry

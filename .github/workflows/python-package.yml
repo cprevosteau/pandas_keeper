@@ -36,7 +36,7 @@ jobs:
         pip install poetry
         poetry --version
         poetry config virtualenvs.in-project true
-        poetry install -vv --extra "excel parquet"
+        poetry install -vv --extras "excel parquet"
     - name: Test with pytest
       run: |
         poetry run pytest

@@ -1,3 +1,4 @@
+from pytest_helpers.utils import assert_error
 from pandas_keeper.df_keeper.importer import import_df
 import pandas as pd
 import pytest
@@ -56,7 +57,7 @@ DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": [1, 2, 3,
      pd.DataFrame({"col_1": ["a", "b", "a", "c"], "Column 2": [1, 2, 3, 4]}), False,
      "treat column 1 but not column 2.")
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_import_df(test_folder, schema, expected_df, should_fail, case):
     # Given
     schema["file_path"] = str(test_folder / schema["file_path"])

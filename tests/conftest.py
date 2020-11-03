@@ -1,13 +1,12 @@
 import sys
 from pathlib import Path
 import pytest
-from functools import wraps
+from shutil import copytree
 import pandas as pd
 import numpy as np
-from shutil import copytree
+
 TEST_FOLDER = Path(__file__).parent
 sys.path.insert(0, str(TEST_FOLDER.parent))
-pytest_plugins = ['helpers_namespace']
 
 
 @pytest.fixture(scope="session")
@@ -22,26 +21,7 @@ def test_folder(tmp_path, data_folder):
     return dst
 
 
-@pytest.helpers.register
-def assert_error(func):
-
-    @wraps(func)
-    def decorator(*args, **kw):
-        assert "should_fail" in kw, \
-            "To use assert_error decorator, the function must be decorated with " \
-            "pytest.mark.parametrize which must provide should_fail as argument."
-        expected_assert_error = kw["should_fail"]
-        if expected_assert_error is True:
-            expected_assert_error = AssertionError
-        if expected_assert_error:
-            with pytest.raises(expected_assert_error):
-                func(*args, **kw)
-        else:
-            func(*args, **kw)
-    return decorator
-
-
-@pytest.helpers.register
+@pytest.fixture(scope="module")
 def df_to_merge():
     df = pd.DataFrame({"float1": np.random.randn(20)})
     df["mult_int_key"] = list(range(10)) + list(range(10))

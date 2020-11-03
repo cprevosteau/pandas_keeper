@@ -1,6 +1,7 @@
 import pytest
 from pandas import Series
 import pandas as pd
+from pytest_helpers.utils import assert_error
 from pandas_keeper import safe_replace_series
 from pandas_keeper.df_keeper.column_keeper import ColumnKeeper, ColumnActionName, ColumnAction, \
     check_df_keeper_columns_are_in_df, treat_column, transform_column
@@ -19,7 +20,7 @@ DF = pd.DataFrame({
 @pytest.mark.parametrize("schema, expected_column_keeper_dic, should_fail, case", [
     ({"name": "col1"}, {"name": "col1"}, False, "Test init just with name.")
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_column_keeper(schema, expected_column_keeper_dic, should_fail, case):
     # Given
     expected_column_keeper = ColumnKeeper.construct(**expected_column_keeper_dic) \
@@ -67,7 +68,7 @@ def test_column_action(schema, expected_column_action_dic):
     (DF[["str_range_10", "a_j"]], [ColumnKeeper(name="error"), ColumnKeeper(name="a_j")],
      True, "Wrong column name"),
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_check_df_keeper_columns_are_in_df(df, df_keeper, should_fail, case):
     # When/Then it should fail depending on should_fail
     check_df_keeper_columns_are_in_df(df, df_keeper)

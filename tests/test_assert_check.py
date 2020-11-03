@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 from pandas import DataFrame, Series
+from pytest_helpers.utils import assert_error
 from pandas_keeper.assert_check import safe_replace, assert_values, assert_type, \
     safe_replace_series, assert_non_null_idx
 
@@ -38,7 +39,7 @@ DF = pd.DataFrame({
             "8 and 9 are not in the allowed values."
     )
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_assert_values(pds: Series, values, should_fail, case):
     # When/Then depending on should_fail, it should fail
     assert_values(pds, values), case
@@ -103,7 +104,7 @@ def test_assert_values(pds: Series, values, should_fail, case):
             "given uppercase values, it should fail without lower options"
     )
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_safe_replace(df: DataFrame, values_dic, kw, expected_df_dic, should_fail, case):
     # Given
     df = df.copy()
@@ -155,7 +156,7 @@ def test_safe_replace(df: DataFrame, values_dic, kw, expected_df_dic, should_fai
         True, "given uppercase values, it should fail without lower option."
     )
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_safe_replace_series(pds: Series, values_dic, kw, expected_pds_list, should_fail, case):
     pds = pds.copy()
     inplace = kw.get("inplace", False)
@@ -190,7 +191,7 @@ def test_safe_replace_series(pds: Series, values_dic, kw, expected_pds_list, sho
     (DF["str_and_int_10"], "int", False, True,
      "given int and string values against int type, it should fail"),
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_assert_type(pds, dtype, na_allowed, should_fail, case):
     # When/Then it should fail depending on should_fail
     assert_type(pds, dtype, na_allowed)
@@ -205,7 +206,7 @@ def test_assert_type(pds, dtype, na_allowed, should_fail, case):
     (pd.Series([2, 1, None, 3]), True, True, pd.Series([True, True, False, True]), False,
      "should return non null index")
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_assert_non_null_idx(pds, na_allowed, return_value, expected_returned_value, should_fail,
                              case):
     # When

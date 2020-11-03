@@ -1,12 +1,10 @@
 import pytest
 import pandas as pd
+from pytest_helpers.utils import assert_error
 from pandas_keeper.safe_merger import _make_check_na_allowed, _check_keys_in_df, \
     _check_keys_are_in_df_only_once, _get_left_right_keys, _check_side_non_key_columns, \
     _check_right_key_values_unicity, _get_matching_keys_info, _drop_other_key_columns, \
     _get_check_na_allowed_args, safe_merge
-
-
-DF_TO_MERGE = pytest.helpers.df_to_merge()
 
 
 @pytest.mark.parametrize("left_columns, right_columns, kw, final_columns, should_fail, "
@@ -27,11 +25,12 @@ DF_TO_MERGE = pytest.helpers.df_to_merge()
      {"on_key_dtypes": "int", "left_on": "int_key_with_nan", "right_on": "mult_int_key",
       "na_allowed": False}, None, True, "NA in left keys.")
  ])
-@pytest.helpers.assert_error
-def test_safe_merger(left_columns, right_columns, kw, final_columns, should_fail, case):
+@assert_error
+def test_safe_merger(df_to_merge, left_columns, right_columns, kw, final_columns, should_fail,
+                     case):
     # Given
-    left_df = DF_TO_MERGE[left_columns]
-    right_df = DF_TO_MERGE[right_columns]
+    left_df = df_to_merge[left_columns]
+    right_df = df_to_merge[right_columns]
 
     # When
     final_df = safe_merge(left_df, right_df, **kw)
@@ -51,7 +50,7 @@ def test_safe_merger(left_columns, right_columns, kw, final_columns, should_fail
     ({"a": True}, ["a", "b"], None, True,
      "na_allowed does not contain all the keys so it should fail")
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_make_check_na_allowed(na_allowed_arg, keys, expected_na_allowed, should_fail,
                                case):
     # When
@@ -77,7 +76,7 @@ def test_make_check_na_allowed(na_allowed_arg, keys, expected_na_allowed, should
                              (None, {"error": True}, None, None, None, True,
                               "left_na_allowed should not be specified alone.")
                          ])
-@pytest.helpers.assert_error
+@assert_error
 def test_get_check_na_allowed_args(na_allowed_arg, left_na_allowed_arg, right_na_allowed_arg,
                                    expected_left_na_allowed, expected_right_na_allowed, should_fail,
                                    case):
@@ -96,7 +95,7 @@ def test_get_check_na_allowed_args(na_allowed_arg, left_na_allowed_arg, right_na
     (pd.DataFrame({"a": [1], "b": [2], "c": [3]}), ["a", "d"], True,
      "key d is not present in df")
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_check_key_columns_in_df(df, keys, should_fail, case):
     # When/Then it should fail depending on should_fail
     _check_keys_in_df(df, keys)
@@ -108,7 +107,7 @@ def test_check_key_columns_in_df(df, keys, should_fail, case):
     (pd.DataFrame([[1, 2, 3, 4]], columns=["a", "b", "b", "d"]), ["a", "b"], True,
      "The key column b is present more than once."),
 ])
-@pytest.helpers.assert_error
+@assert_error
 def test_check_keys_are_in_df_only_once(df, keys, should_fail, case):
     # When/Then it should fail depending on should_fail
     _check_keys_are_in_df_only_once(df, keys)
@@ -144,7 +143,7 @@ def test_check_keys_are_in_df_only_once(df, keys, should_fail, case):
      "on_key_dtypes keys should correspond to either left_on columns or right_on columns."),
     ({"b": "int"}, None, ["a", "d"], ["a", "b"], None, None, None, None,
      True, "on_key_dtypes keys should correspond to either left_on columns or right_on columns.")])
-@pytest.helpers.assert_error
+@assert_error
 def test_get_left_right_keys(on_key_dtypes, on, left_on, right_on, expected_left_key_dtypes,
                              expected_right_key_dtypes, expected_left_keys, expected_right_keys,
                              should_fail, case):
@@ -170,11 +169,11 @@ def test_get_left_right_keys(on_key_dtypes, on, left_on, right_on, expected_left
     (["int_key", "float1", "str_key"], ["str_key", "str1"], ["int_key"], True,
      "DataFrame have key from other on its non key columns.")
 ])
-@pytest.helpers.assert_error
-def test_check_left_non_key_columns(columns, other_columns, keys, should_fail, case):
+@assert_error
+def test_check_left_non_key_columns(df_to_merge, columns, other_columns, keys, should_fail, case):
     # Given
-    left_df = DF_TO_MERGE[columns]
-    right_df = DF_TO_MERGE[other_columns]
+    left_df = df_to_merge[columns]
+    right_df = df_to_merge[other_columns]
 
     # When/Then it should fail depending on should_fail
     _check_side_non_key_columns(left_df, right_df, keys, "left")
@@ -189,10 +188,10 @@ def test_check_left_non_key_columns(columns, other_columns, keys, should_fail, c
         (["mult_int_key", "mult_str_key"], True,
          "It should not be duplicate right keys concatenations."),
     ])
-@pytest.helpers.assert_error
-def test_check_right_key_values_unicity(right_keys, should_fail, case):
+@assert_error
+def test_check_right_key_values_unicity(df_to_merge, right_keys, should_fail, case):
     # Given
-    right_concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in right_keys])))
+    right_concat_keys = pd.Series(list(zip(*[df_to_merge[col] for col in right_keys])))
 
     # When/Then it should fail depending on should_fail
     _check_right_key_values_unicity(right_concat_keys)
@@ -206,10 +205,10 @@ def test_check_right_key_values_unicity(right_keys, should_fail, case):
         (["mult_int_key"], ["int_key"], 20, 20, 100.),
         (["int_key", "mult_int_key"], ["mult_int_key", "mult_int_key"], 10, 20, 50.)
     ])
-def test_get_matching_keys_info(keys, other_keys, sum_in_other, size, pct_in_other):
+def test_get_matching_keys_info(df_to_merge, keys, other_keys, sum_in_other, size, pct_in_other):
     # Given
-    concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in keys])))
-    other_concat_keys = pd.Series(list(zip(*[DF_TO_MERGE[col] for col in other_keys])))
+    concat_keys = pd.Series(list(zip(*[df_to_merge[col] for col in keys])))
+    other_concat_keys = pd.Series(list(zip(*[df_to_merge[col] for col in other_keys])))
 
     # When
     actual_sum_in_other, actual_size, actual_pct_in_other = _get_matching_keys_info(
@@ -226,9 +225,10 @@ def test_get_matching_keys_info(keys, other_keys, sum_in_other, size, pct_in_oth
     (["int_key", "mult_int_key", "float1"], ["int_key"], ["mult_int_key"],
      ["int_key", "float1"])
 ])
-def test_drop_other_key_columns(columns, left_keys, right_keys, expected_final_columns):
+def test_drop_other_key_columns(df_to_merge, columns, left_keys, right_keys,
+                                expected_final_columns):
     # Given
-    df = DF_TO_MERGE[columns]
+    df = df_to_merge[columns]
 
     # When
     final_df = _drop_other_key_columns(df, left_keys, right_keys)

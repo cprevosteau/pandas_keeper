@@ -20,7 +20,7 @@ parquet = ["pyarrow"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.poetry.dev-dependencies]
-pytest = "*"
+pytest = "< 6"
 pytest-flake8 = "*"
 pytest-helpers-namespace = "*"
 pytest-lazy-fixture = "*"

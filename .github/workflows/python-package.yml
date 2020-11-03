@@ -38,7 +38,7 @@ jobs:
     - name: Cache Python Virtual Environment
       uses: actions/cache@v2
       env:
-        cache-name: cache-venv-pip
+        cache-name: cache-venv-pip2
       with:
         path: |
           .venv

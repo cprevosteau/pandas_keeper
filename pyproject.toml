@@ -27,6 +27,8 @@ mypy = "== 0.770"
 pytest-mypy = "*"
 xlwt = "*"
 openpyxl = "*"
+sphinx = "*"
+sphinx_rtd_theme = "*"
 
 [tool.pytest.ini_options]
 addopts  = "--flake8 --mypy"

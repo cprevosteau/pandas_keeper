@@ -19,7 +19,7 @@ jobs:
         run: flake8
 
   test-windows:
-    runs-on: windows
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: [ 3.6, 3.7, 3.8 ]

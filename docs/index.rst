@@ -6,6 +6,8 @@
 Welcome to Pandas Keeper's documentation!
 =========================================
 
+This is tools for pandas.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

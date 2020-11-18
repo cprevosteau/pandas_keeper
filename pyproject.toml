@@ -11,8 +11,6 @@ pandas = ">= 1.0.0"
 pydantic = ">= 1.0"
 pyarrow = { version = ">= 0.16.0", optional = true }
 xlrd = { version = ">= 1.0.0", optional = true }
-sphinx = { version = "*", optional = true }
-sphinx_rtd_theme = { version = "*", optional = true  }
 
 [tool.poetry.extras]
 excel = ["xlrd"]
@@ -21,14 +19,14 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
-pytest-flake8 = "*"
 pytest-lazy-fixture = "*"
 mypy = "== 0.770"
 pytest-mypy = "*"
 xlwt = "*"
 openpyxl = "*"
-sphinx = "*"
-sphinx_rtd_theme = "*"
+sphinx = { version = "*", optional = true }
+sphinx_rtd_theme = { version = "*", optional = true  }
+pytest-flake8 = {git = "https://github.com/thomascobb/pytest-flake8.git"}
 
 [tool.pytest.ini_options]
 addopts  = "--flake8 --mypy"

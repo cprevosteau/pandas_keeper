@@ -18,6 +18,7 @@ jobs:
       - name: Run flake8
         run: flake8
 
+  # Caching .venv for windows and poetry does not work anymore.
   test-windows:
     runs-on: windows-latest
     strategy:

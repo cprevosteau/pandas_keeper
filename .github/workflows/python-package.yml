@@ -23,7 +23,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [ 3.6, 3.7, 3.8 3.9 ]
+        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
@@ -49,7 +49,7 @@ jobs:
           pip install poetry
           poetry --version
           poetry config virtualenvs.in-project true
-          poetry install -vv --extras "excel parquet"
+          poetry install -vv --extras "excel parquet docs"
 
       - name: Test with pytest
         run: |
@@ -65,7 +65,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8 3.9]
+        python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -92,7 +92,7 @@ jobs:
         pip install poetry
         poetry --version
         poetry config virtualenvs.in-project true
-        poetry install -vv --extras "excel parquet"
+        poetry install -vv --extras "excel parquet docs"
 
     - name: Test with pytest
       run: |

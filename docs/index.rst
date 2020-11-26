@@ -78,13 +78,7 @@ For example, if we declare a column not present in the data :
     ... }
     >>> import_df(df_config)
     Traceback (most recent call last):
-      File "<input>", line 1, in <module>
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/df_keeper/importer.py", line 11, in import_df
-        check_df_keeper_columns_are_in_df(df, df_keeper.columns)
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/df_keeper/column_keeper.py", line 71, in check_df_keeper_columns_are_in_df
-        _assert_empty_wrong_values(wrong_cols,
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/assert_check.py", line 7, in _assert_empty_wrong_values
-        assert len(wrong_values) == 0, msg
+        ...
     AssertionError: Those columns are not in the DataFrame : {'Col 2'}
 
 Or if we declare a wrong assumption:
@@ -103,24 +97,7 @@ Or if we declare a wrong assumption:
     ... }
     >>> import_df(df_config)
     Traceback (most recent call last):
-      File "<input>", line 1, in <module>
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/df_keeper/importer.py", line 15, in import_df
-        df[col.name] = treat_column(df[col.name], col)
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/df_keeper/column_keeper.py", line 87, in treat_column
-        assert_type(pds, column_keeper.dtype, column_keeper.nullable)
-      File "/home/clement/encrypted/app/pandas_keeper/pandas_keeper/assert_check.py", line 92, in assert_type
-        wrong_values = set(nn_col[nn_col != nn_col.astype(dtype)])
-      File "/home/clement/.cache/pypoetry/virtualenvs/pandas-keeper-aniYeunE-py3.8/lib/python3.8/site-packages/pandas/core/generic.py", line 5546, in astype
-        new_data = self._mgr.astype(dtype=dtype, copy=copy, errors=errors,)
-      File "/home/clement/.cache/pypoetry/virtualenvs/pandas-keeper-aniYeunE-py3.8/lib/python3.8/site-packages/pandas/core/internals/managers.py", line 595, in astype
-        return self.apply("astype", dtype=dtype, copy=copy, errors=errors)
-      File "/home/clement/.cache/pypoetry/virtualenvs/pandas-keeper-aniYeunE-py3.8/lib/python3.8/site-packages/pandas/core/internals/managers.py", line 406, in apply
-        applied = getattr(b, f)(**kwargs)
-      File "/home/clement/.cache/pypoetry/virtualenvs/pandas-keeper-aniYeunE-py3.8/lib/python3.8/site-packages/pandas/core/internals/blocks.py", line 595, in astype
-        values = astype_nansafe(vals1d, dtype, copy=True)
-      File "/home/clement/.cache/pypoetry/virtualenvs/pandas-keeper-aniYeunE-py3.8/lib/python3.8/site-packages/pandas/core/dtypes/cast.py", line 974, in astype_nansafe
-        return lib.astype_intsafe(arr.ravel(), dtype).reshape(arr.shape)
-      File "pandas/_libs/lib.pyx", line 615, in pandas._libs.lib.astype_intsafe
+        ...
     ValueError: invalid literal for int() with base 10: 'a'
 
 ..

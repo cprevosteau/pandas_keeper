@@ -18,7 +18,10 @@ DF = pd.DataFrame({
 
 
 @pytest.mark.parametrize("schema, expected_column_keeper_dic, should_fail, case", [
-    ({"name": "col1"}, {"name": "col1"}, False, "Test init just with name.")
+    ({"name": "col1"}, {"name": "col1"}, False, "Test init just with name."),
+    ({"name": "col1", "actions": [{"name": "fillna", "args": ["c"]}]},
+     {"name": "col1", "actions": [ColumnAction(**{"name": "fillna", "args": ["c"]})]},
+     False, "Test init with action")
 ])
 @assert_error
 def test_column_keeper(schema, expected_column_keeper_dic, should_fail, case):
@@ -93,16 +96,23 @@ def test_transform_column(pds, action, expected_pds):
     pd.testing.assert_series_equal(actual_pds, expected_pds)
 
 
-def test_treat_column():
-    # Given
-    col_name = "col1"
-    pds = pd.Series(range(10), name=col_name)
-    column_keeper = ColumnKeeper(name=col_name, dtype=int, actions=[
-        ColumnAction(name="safe_replace", args=[{i: str(i) for i in range(10)}]),
-        ColumnAction(name="astype", args=["int64"])
-    ], nullable=False)
-    expected_pds = pd.Series((i for i in range(10)), name=col_name)
-
+@pytest.mark.parametrize("pds, column_keeper, expected_pds", [
+    (
+            pd.Series(range(10), name="col1"),
+            ColumnKeeper(name="col1", dtype=int, actions=[
+                    ColumnAction(name="safe_replace", args=[{i: str(i) for i in range(10)}]),
+                    ColumnAction(name="astype", args=["int64"])
+                ], nullable=False),
+            pd.Series((i for i in range(10)), name="col1")
+    ), (
+            pd.Series(["a", "b", "a", None], name="col1"),
+            ColumnKeeper(name="col1", dtype=str, actions=[
+                    ColumnAction(name="fillna", args=["c"]),
+                ], nullable=False),
+            pd.Series(["a", "b", "a", "c"], name="col1")
+    )
+])
+def test_treat_column(pds, column_keeper, expected_pds):
     # When
     actual_pds = treat_column(pds, column_keeper)
 

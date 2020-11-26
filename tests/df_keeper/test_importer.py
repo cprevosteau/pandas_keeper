@@ -8,15 +8,15 @@ DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": [1, 2, 3,
 
 
 @pytest.mark.parametrize("schema, expected_df, should_fail, case", [
-    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_only": False},
+    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_undefined": True},
      DATA_DF, False, "Just read a csv"),
-    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_only": True,
+    ({"file_path": "data.csv", "read_arguments": {"sep": ";"}, "keep_undefined": False,
       "columns": [{"name": "Column 2"}]},
      DATA_DF[["Column 2"]], False, "Read a csv but keep only specified columns."),
     ({
          "file_path": "data.csv",
          "read_arguments": {"sep": ";"},
-         "keep_only": True,
+         "keep_undefined": False,
          "columns": [
              {
                  "name": "Error"
@@ -28,11 +28,12 @@ DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": [1, 2, 3,
     ({
              "file_path": "data.csv",
              "read_arguments": {"sep": ";"},
-             "keep_only": True,
+             "keep_undefined": False,
              "columns": [
                  {
                      "name": "Column 1",
-                     "rename": "col_1"
+                     "rename": "col_1",
+                     "nullable": True
                  },
                  {
                      "name": "Column 2",
@@ -44,7 +45,7 @@ DATA_DF = pd.DataFrame({"Column 1": ["a", "b", "a", None], "Column 2": [1, 2, 3,
     ({
          "file_path": "data.csv",
          "read_arguments": {"sep": ";"},
-         "keep_only": False,
+         "keep_undefined": True,
          "columns": [
              {
                  "name": "Column 1",

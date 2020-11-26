@@ -3,7 +3,7 @@ from typing import Callable, Dict, Any, Optional, List, Tuple
 from pandas import Series, DataFrame
 from pandas._typing import Dtype
 from pydantic import validator
-from pydantic.main import BaseModel
+from pandas_keeper.df_keeper.model import Model
 from pandas_keeper import safe_replace_series
 from enum import Enum
 from pandas_keeper.assert_check import _assert_empty_wrong_values, assert_type, assert_non_null_idx
@@ -20,7 +20,7 @@ INPLACE_ACTIONS = [ColumnActionName.safe_replace, ColumnActionName.replace, Colu
 
 
 # noinspection PyMethodParameters
-class ColumnAction(BaseModel):  # type: ignore
+class ColumnAction(Model):  # type: ignore
     name: ColumnActionName
     method: Callable[..., Optional[Series]] = None  # type: ignore
     args: Tuple[Any, ...] = tuple()
@@ -54,10 +54,10 @@ class ColumnAction(BaseModel):  # type: ignore
         return kwargs
 
 
-class ColumnKeeper(BaseModel):
+class ColumnKeeper(Model):
     name: str
     dtype: Optional[Dtype] = None
-    nullable: bool = True
+    nullable: bool = False
     rename: Optional[str] = None
     actions: List[ColumnAction] = []
     drop: bool = False

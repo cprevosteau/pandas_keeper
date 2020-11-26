@@ -9,7 +9,7 @@ def import_df(df_keeper_schema: Dict[str, Any]) -> DataFrame:
     df_keeper = DFKeeper(**df_keeper_schema)
     df = read_data(df_keeper.file_path, df_keeper.reader, **df_keeper.read_arguments)
     check_df_keeper_columns_are_in_df(df, df_keeper.columns)
-    if df_keeper.keep_only:
+    if not df_keeper.keep_undefined:
         df = df[[col.name for col in df_keeper.columns]]
     for col in df_keeper.columns:
         df[col.name] = treat_column(df[col.name], col)

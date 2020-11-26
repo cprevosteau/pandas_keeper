@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 
-class Model(BaseModel):
+class ModelExtraArgForbidden(BaseModel):
     class Config:
         extra = "forbid"
